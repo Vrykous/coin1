@@ -403,7 +403,7 @@ returns the  unpaid earnings
     }
 }
 
-contract SantaCoin is IBEP20, Auth {
+contract RudolphCoin is IBEP20, Auth {
     using SafeMath for uint256;
 
     uint256 public constant MASK = type(uint128).max;
@@ -413,8 +413,8 @@ contract SantaCoin is IBEP20, Auth {
     address ZERO = 0x0000000000000000000000000000000000000000;
     address DEAD_NON_CHECKSUM = 0x000000000000000000000000000000000000dEaD;
 
-    string constant _name = "Santa Coin";
-    string constant _symbol = "Santa";
+    string constant _name = "Rudolph Coin";
+    string constant _symbol = "Rudolph";
     uint8 constant _decimals = 9;
 
     uint256 _totalSupply = 1_000_000_000_000_000 * (10 ** _decimals);
