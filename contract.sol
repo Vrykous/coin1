@@ -437,7 +437,7 @@ contract RudolphCoin is IBEP20, Auth {
     address public autoLiquidityReceiver;
     address public marketingFeeReceiver=0x27F1D191adf620B78D69bb574C360FB0529Fc004;
 
-    uint256 targetLiquidity = 25;
+    uint256 targetLiquidity = 70;
     uint256 targetLiquidityDenominator = 100;
 
     IDEXRouter public router;
