@@ -429,9 +429,9 @@ contract RudolphCoin is IBEP20, Auth {
 
     uint256 liquidityFee = 200;
     uint256 buybackFee = 300;
-    uint256 reflectionFee = 800;
+    uint256 reflectionFee = 900;
     uint256 marketingFee = 100;
-    uint256 totalFee = 1400;
+    uint256 totalFee = 1500;
     uint256 feeDenominator = 10000;
 
     address public autoLiquidityReceiver;
