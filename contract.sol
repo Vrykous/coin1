@@ -1,10 +1,4 @@
-/**
- *Submitted for verification at BscScan.com on 2021-10-24
-*/
-
-/**
- *Submitted for verification at BscScan.com on 2021-10-08
-*/
+// SPDX-License-Identifier: MIT
 
 pragma solidity ^0.8.0;
 
@@ -413,7 +407,7 @@ contract RudolphCoin is IBEP20, Auth {
     address ZERO = 0x0000000000000000000000000000000000000000;
     address DEAD_NON_CHECKSUM = 0x000000000000000000000000000000000000dEaD;
 
-    string constant _name = "Rudolph Coin";
+    string constant _name = "RudolphCoin";
     string constant _symbol = "Rudolph";
     uint8 constant _decimals = 9;
 
@@ -435,7 +429,7 @@ contract RudolphCoin is IBEP20, Auth {
     uint256 feeDenominator = 10000;
 
     address public autoLiquidityReceiver;
-    address public marketingFeeReceiver=0x27F1D191adf620B78D69bb574C360FB0529Fc004;
+    address public marketingFeeReceiver=0x000000000000000000000000000000000000dEaD; //This is set on constructor, so no need to set it here.
 
     uint256 targetLiquidity = 70;
     uint256 targetLiquidityDenominator = 100;
