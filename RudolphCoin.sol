@@ -1,5 +1,12 @@
-// SPDX-License-Identifier: MIT
+/**
+ *Submitted for verification at BscScan.com on 2021-09-16
+*/
 
+/**
+ *Submitted for verification at BscScan.com on 2021-09-16
+*/
+
+//SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
 
@@ -236,7 +243,7 @@ contract DividendDistributor is IDividendDistributor {
 
     struct Share {
         uint256 amount;
-        uint256 totalExcluded;// excluded dividend
+        uint256 totalExcluded;
         uint256 totalRealised;
     }
 
@@ -252,7 +259,7 @@ contract DividendDistributor is IDividendDistributor {
 
     uint256 public totalShares;
     uint256 public totalDividends;
-    uint256 public totalDistributed;// to be shown in UI
+    uint256 public totalDistributed;
     uint256 public dividendsPerShare;
     uint256 public dividendsPerShareAccuracyFactor = 10 ** 36;
 
@@ -271,7 +278,7 @@ contract DividendDistributor is IDividendDistributor {
     modifier onlyToken() {
         require(msg.sender == _token); _;
     }
-    //0x10ED43C718714eb63d5aA57B78B54704E256024E pancake swap - confirm this
+
     constructor (address _router) {
         router = _router != address(0)
         ? IDEXRouter(_router)
@@ -367,9 +374,7 @@ contract DividendDistributor is IDividendDistributor {
     function claimDividend() external {
         distributeDividend(msg.sender);
     }
-/*
-returns the  unpaid earnings
-*/
+
     function getUnpaidEarnings(address shareholder) public view returns (uint256) {
         if(shares[shareholder].amount == 0){ return 0; }
 
@@ -397,19 +402,19 @@ returns the  unpaid earnings
     }
 }
 
-contract RudolphCoin is IBEP20, Auth {
+contract Rudolph is IBEP20, Auth {
     using SafeMath for uint256;
 
     uint256 public constant MASK = type(uint128).max;
-    address BUSD = 0x4189920a993B984cC88bb31c89Dcc9A986c661eE;
+    address BUSD = 0xe9e7CEA3DedcA5984780Bafc599bD69ADd087D56;
     address public WBNB = 0xbb4CdB9CBd36B01bD1cBaEBF2De08d9173bc095c;
     address DEAD = 0x000000000000000000000000000000000000dEaD;
-    address RUDOLPHBUYBACK = 0x428d7f67301642694B7F622F56349d70cf3220b9;
+    address RUDOLPHBUYBACK = 0x000000000000000000000000000000000000dEaD;
     address ZERO = 0x0000000000000000000000000000000000000000;
     address DEAD_NON_CHECKSUM = 0x000000000000000000000000000000000000dEaD;
 
-    string constant _name = "Rudolph Coin";
-    string constant _symbol = "Rudolph";
+    string constant _name = "Rudolph Test Coin";
+    string constant _symbol = "RudolphTest1";
     uint8 constant _decimals = 9;
 
     uint256 _totalSupply = 1_000_000_000_000_000 * (10 ** _decimals);
@@ -424,13 +429,13 @@ contract RudolphCoin is IBEP20, Auth {
 
     uint256 liquidityFee = 200;
     uint256 buybackFee = 300;
-    uint256 reflectionFee = 900;
+    uint256 reflectionFee = 800;
     uint256 marketingFee = 100;
-    uint256 totalFee = 1500;
+    uint256 totalFee = 1400;
     uint256 feeDenominator = 10000;
 
     address public autoLiquidityReceiver;
-    address public marketingFeeReceiver=0x000000000000000000000000000000000000dEaD; //This is set on constructor, so no need to set it here.
+    address public marketingFeeReceiver;
 
     uint256 targetLiquidity = 25;
     uint256 targetLiquidityDenominator = 100;
@@ -465,11 +470,10 @@ contract RudolphCoin is IBEP20, Auth {
     modifier swapping() { inSwap = true; _; inSwap = false; }
 
     constructor (
-        address _dexRouter, address _marketingAddress, address _wbnb
+        address _dexRouter
     ) Auth(msg.sender) {
         router = IDEXRouter(_dexRouter);
-        WBNB=_wbnb;
-        pair = IDEXFactory(router.factory()).createPair(_wbnb, address(this));
+        pair = IDEXFactory(router.factory()).createPair(WBNB, address(this));
         _allowances[address(this)][address(router)] = _totalSupply;
         WBNB = router.WETH();
         distributor = new DividendDistributor(_dexRouter);
@@ -483,14 +487,13 @@ contract RudolphCoin is IBEP20, Auth {
         buyBacker[msg.sender] = true;
 
         autoLiquidityReceiver = msg.sender;
-        marketingFeeReceiver = _marketingAddress;
+        marketingFeeReceiver = msg.sender;
 
         approve(_dexRouter, _totalSupply);
         approve(address(pair), _totalSupply);
         _balances[msg.sender] = _totalSupply;
         emit Transfer(address(0), msg.sender, _totalSupply);
     }
-    
 
     receive() external payable { }
 
@@ -654,6 +657,14 @@ contract RudolphCoin is IBEP20, Auth {
 
     function triggerZeusBuyback(uint256 amount, bool triggerBuybackMultiplier) external authorized {
         buyTokens(amount, DEAD);
+        if(triggerBuybackMultiplier){
+            buybackMultiplierTriggeredAt = block.timestamp;
+            emit BuybackMultiplierActive(buybackMultiplierLength);
+        }
+    }
+    
+    function triggerRudolphBuyback(uint256 amount, bool triggerBuybackMultiplier) external authorized {
+        buyTokens(amount, RUDOLPHBUYBACK);
         if(triggerBuybackMultiplier){
             buybackMultiplierTriggeredAt = block.timestamp;
             emit BuybackMultiplierActive(buybackMultiplierLength);
