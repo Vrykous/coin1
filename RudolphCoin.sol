@@ -271,7 +271,7 @@ contract DividendDistributor is IDividendDistributor {
     modifier onlyToken() {
         require(msg.sender == _token); _;
     }
-
+    //0x10ED43C718714eb63d5aA57B78B54704E256024E pancake swap - confirm this
     constructor (address _router) {
         router = _router != address(0)
         ? IDEXRouter(_router)
