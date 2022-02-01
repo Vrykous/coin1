@@ -416,7 +416,7 @@ contract Main50 is IBEP20, Auth {
     uint256 distributorGas = 500000;
 
     bool public swapEnabled = true;
-    uint256 public swapThreshold = _totalSupply / 1000; // 5%
+    uint256 public swapThreshold = _totalSupply / 10000; // 5%
     bool inSwap;
     modifier swapping() { inSwap = true; _; inSwap = false; }
 
