@@ -1,97 +1,56 @@
+/**
+ *Submitted for verification at BscScan.com on 2022-01-27
+*/
+
 // SPDX-License-Identifier: MIT
 
-pragma solidity ^0.8.0;
-
-
+pragma solidity ^0.8.5;
 
 /**
- * SAFEMATH LIBRARY
+ * Standard SafeMath, stripped down to just add/sub/mul/div
  */
 library SafeMath {
-    
-    function tryAdd(uint256 a, uint256 b) internal pure returns (bool, uint256) {
-        unchecked {
-            uint256 c = a + b;
-            if (c < a) return (false, 0);
-            return (true, c);
-        }
-    }
-
-    function trySub(uint256 a, uint256 b) internal pure returns (bool, uint256) {
-        unchecked {
-            if (b > a) return (false, 0);
-            return (true, a - b);
-        }
-    }
-
-    function tryMul(uint256 a, uint256 b) internal pure returns (bool, uint256) {
-        unchecked {
-            // Gas optimization: this is cheaper than requiring 'a' not being zero, but the
-            // benefit is lost if 'b' is also tested.
-            // See: https://github.com/OpenZeppelin/openzeppelin-contracts/pull/522
-            if (a == 0) return (true, 0);
-            uint256 c = a * b;
-            if (c / a != b) return (false, 0);
-            return (true, c);
-        }
-    }
-
-    function tryDiv(uint256 a, uint256 b) internal pure returns (bool, uint256) {
-        unchecked {
-            if (b == 0) return (false, 0);
-            return (true, a / b);
-        }
-    }
-
-    function tryMod(uint256 a, uint256 b) internal pure returns (bool, uint256) {
-        unchecked {
-            if (b == 0) return (false, 0);
-            return (true, a % b);
-        }
-    }
-
     function add(uint256 a, uint256 b) internal pure returns (uint256) {
-        return a + b;
-    }
+        uint256 c = a + b;
+        require(c >= a, "SafeMath: addition overflow");
 
+        return c;
+    }
     function sub(uint256 a, uint256 b) internal pure returns (uint256) {
-        return a - b;
+        return sub(a, b, "SafeMath: subtraction overflow");
     }
-
-    function mul(uint256 a, uint256 b) internal pure returns (uint256) {
-        return a * b;
-    }
-
-    function div(uint256 a, uint256 b) internal pure returns (uint256) {
-        return a / b;
-    }
-
-    function mod(uint256 a, uint256 b) internal pure returns (uint256) {
-        return a % b;
-    }
-
     function sub(uint256 a, uint256 b, string memory errorMessage) internal pure returns (uint256) {
-        unchecked {
-            require(b <= a, errorMessage);
-            return a - b;
-        }
-    }
+        require(b <= a, errorMessage);
+        uint256 c = a - b;
 
+        return c;
+    }
+    function mul(uint256 a, uint256 b) internal pure returns (uint256) {
+        if (a == 0) {
+            return 0;
+        }
+
+        uint256 c = a * b;
+        require(c / a == b, "SafeMath: multiplication overflow");
+
+        return c;
+    }
+    function div(uint256 a, uint256 b) internal pure returns (uint256) {
+        return div(a, b, "SafeMath: division by zero");
+    }
     function div(uint256 a, uint256 b, string memory errorMessage) internal pure returns (uint256) {
-        unchecked {
-            require(b > 0, errorMessage);
-            return a / b;
-        }
-    }
+        // Solidity only automatically asserts when dividing by 0
+        require(b > 0, errorMessage);
+        uint256 c = a / b;
+        // assert(a == b * c + a % b); // There is no case in which this doesn't hold
 
-    function mod(uint256 a, uint256 b, string memory errorMessage) internal pure returns (uint256) {
-        unchecked {
-            require(b > 0, errorMessage);
-            return a % b;
-        }
+        return c;
     }
 }
 
+/**
+ * BEP20 standard interface.
+ */
 interface IBEP20 {
     function totalSupply() external view returns (uint256);
     function decimals() external view returns (uint8);
@@ -107,6 +66,9 @@ interface IBEP20 {
     event Approval(address indexed owner, address indexed spender, uint256 value);
 }
 
+/**
+ * Allows for contract ownership along with multi-address authorization
+ */
 abstract contract Auth {
     address internal owner;
     mapping (address => bool) internal authorizations;
@@ -236,11 +198,11 @@ contract DividendDistributor is IDividendDistributor {
 
     struct Share {
         uint256 amount;
-        uint256 totalExcluded;// excluded dividend
+        uint256 totalExcluded;
         uint256 totalRealised;
     }
 
-    IBEP20 BUSD = IBEP20(0xe9e7CEA3DedcA5984780Bafc599bD69ADd087D56);
+    IBEP20  BNB = IBEP20(0xbb4CdB9CBd36B01bD1cBaEBF2De08d9173bc095c);
     address WBNB = 0xbb4CdB9CBd36B01bD1cBaEBF2De08d9173bc095c;
     IDEXRouter router;
 
@@ -252,12 +214,12 @@ contract DividendDistributor is IDividendDistributor {
 
     uint256 public totalShares;
     uint256 public totalDividends;
-    uint256 public totalDistributed;// to be shown in UI
+    uint256 public totalDistributed;
     uint256 public dividendsPerShare;
     uint256 public dividendsPerShareAccuracyFactor = 10 ** 36;
 
     uint256 public minPeriod = 1 hours;
-    uint256 public minDistribution = 1 * (10 ** 18);
+    uint256 public minDistribution = 1 * (10 ** 8);
 
     uint256 currentIndex;
 
@@ -274,8 +236,8 @@ contract DividendDistributor is IDividendDistributor {
 
     constructor (address _router) {
         router = _router != address(0)
-        ? IDEXRouter(_router)
-        : IDEXRouter(0x10ED43C718714eb63d5aA57B78B54704E256024E);
+            ? IDEXRouter(_router)
+            : IDEXRouter(0x10ED43C718714eb63d5aA57B78B54704E256024E);
         _token = msg.sender;
     }
 
@@ -301,11 +263,11 @@ contract DividendDistributor is IDividendDistributor {
     }
 
     function deposit() external payable override onlyToken {
-        uint256 balanceBefore = BUSD.balanceOf(address(this));
+        uint256 balanceBefore = BNB.balanceOf(address(this));
 
         address[] memory path = new address[](2);
         path[0] = WBNB;
-        path[1] = address(BUSD);
+        path[1] = address(BNB);
 
         router.swapExactETHForTokensSupportingFeeOnTransferTokens{value: msg.value}(
             0,
@@ -314,7 +276,7 @@ contract DividendDistributor is IDividendDistributor {
             block.timestamp
         );
 
-        uint256 amount = BUSD.balanceOf(address(this)).sub(balanceBefore);
+        uint256 amount = BNB.balanceOf(address(this)).sub(balanceBefore);
 
         totalDividends = totalDividends.add(amount);
         dividendsPerShare = dividendsPerShare.add(dividendsPerShareAccuracyFactor.mul(amount).div(totalShares));
@@ -345,10 +307,10 @@ contract DividendDistributor is IDividendDistributor {
             iterations++;
         }
     }
-
+    
     function shouldDistribute(address shareholder) internal view returns (bool) {
         return shareholderClaims[shareholder] + minPeriod < block.timestamp
-        && getUnpaidEarnings(shareholder) > minDistribution;
+                && getUnpaidEarnings(shareholder) > minDistribution;
     }
 
     function distributeDividend(address shareholder) internal {
@@ -357,19 +319,17 @@ contract DividendDistributor is IDividendDistributor {
         uint256 amount = getUnpaidEarnings(shareholder);
         if(amount > 0){
             totalDistributed = totalDistributed.add(amount);
-            BUSD.transfer(shareholder, amount);
+            BNB.transfer(shareholder, amount);
             shareholderClaims[shareholder] = block.timestamp;
             shares[shareholder].totalRealised = shares[shareholder].totalRealised.add(amount);
             shares[shareholder].totalExcluded = getCumulativeDividends(shares[shareholder].amount);
         }
     }
-
-    function claimDividend() external {
-        distributeDividend(msg.sender);
+    
+    function claimDividend(address shareholder) external onlyToken{
+        distributeDividend(shareholder);
     }
-/*
-returns the  unpaid earnings
-*/
+
     function getUnpaidEarnings(address shareholder) public view returns (uint256) {
         if(shares[shareholder].amount == 0){ return 0; }
 
@@ -397,22 +357,20 @@ returns the  unpaid earnings
     }
 }
 
-contract RudolphCoin is IBEP20, Auth {
+contract Main50 is IBEP20, Auth {
     using SafeMath for uint256;
 
-    uint256 public constant MASK = type(uint128).max;
-    address BUSD = 0xe9e7CEA3DedcA5984780Bafc599bD69ADd087D56;
-    address public WBNB = 0xbb4CdB9CBd36B01bD1cBaEBF2De08d9173bc095c;
+    address BNB = 0xbb4CdB9CBd36B01bD1cBaEBF2De08d9173bc095c;
+    address WBNB = 0xbb4CdB9CBd36B01bD1cBaEBF2De08d9173bc095c;
     address DEAD = 0x000000000000000000000000000000000000dEaD;
     address ZERO = 0x0000000000000000000000000000000000000000;
-    address DEAD_NON_CHECKSUM = 0x000000000000000000000000000000000000dEaD;
 
-    string constant _name = "RudolphCoin";
-    string constant _symbol = "Rudolph";
+    string constant _name = "Main 50";
+    string constant _symbol = "m50";
     uint8 constant _decimals = 9;
 
-    uint256 _totalSupply = 1_000_000_000_000_000 * (10 ** _decimals);
-    uint256 public _maxTxAmount = _totalSupply.div(400); // 0.25%
+    uint256 _totalSupply = 1000000000000000 * (10 ** _decimals);
+    uint256 public _maxTxAmount = _totalSupply / 1; // 100%
 
     mapping (address => uint256) _balances;
     mapping (address => mapping (address => uint256)) _allowances;
@@ -421,24 +379,25 @@ contract RudolphCoin is IBEP20, Auth {
     mapping (address => bool) isTxLimitExempt;
     mapping (address => bool) isDividendExempt;
 
-    uint256 liquidityFee = 200;
-    uint256 buybackFee = 300;
-    uint256 reflectionFee = 900;
-    uint256 marketingFee = 100;
-    uint256 totalFee = 1500;
-    uint256 feeDenominator = 10000;
+    uint256 liquidityFee = 3;
+    uint256 buybackFee = 1;
+    uint256 reflectionFee = 5;
+    uint256 marketingFee = 4;
+    uint256 mcifFee = 2;
+    uint256 totalFee = 15;
+    uint256 feeDenominator = 100;
 
     address public autoLiquidityReceiver;
-    address public marketingFeeReceiver=0x000000000000000000000000000000000000dEaD; //This is set on constructor, so no need to set it here.
+    address public marketingFeeReceiver;
+    address public mcifFeeReceiver;
 
-    uint256 targetLiquidity = 70;
+    uint256 targetLiquidity = 25;
     uint256 targetLiquidityDenominator = 100;
 
     IDEXRouter public router;
     address public pair;
 
     uint256 public launchedAt;
-    uint256 public launchedAtTimestamp;
 
     uint256 buybackMultiplierNumerator = 200;
     uint256 buybackMultiplierDenominator = 100;
@@ -446,7 +405,7 @@ contract RudolphCoin is IBEP20, Auth {
     uint256 buybackMultiplierLength = 30 minutes;
 
     bool public autoBuybackEnabled = false;
-    mapping (address => bool) buyBacker;
+    bool public autoBuybackMultiplier = true;
     uint256 autoBuybackCap;
     uint256 autoBuybackAccumulator;
     uint256 autoBuybackAmount;
@@ -454,42 +413,34 @@ contract RudolphCoin is IBEP20, Auth {
     uint256 autoBuybackBlockLast;
 
     DividendDistributor distributor;
-    address public distributorAddress;
-
     uint256 distributorGas = 500000;
 
     bool public swapEnabled = true;
-    uint256 public swapThreshold = _totalSupply / 2000; // 0.005%
+    uint256 public swapThreshold = _totalSupply / 1000; // 5%
     bool inSwap;
     modifier swapping() { inSwap = true; _; inSwap = false; }
 
-    constructor (
-        address _dexRouter, address _marketingAddress, address _wbnb
-    ) Auth(msg.sender) {
-        router = IDEXRouter(_dexRouter);
-        WBNB=_wbnb;
-        pair = IDEXFactory(router.factory()).createPair(_wbnb, address(this));
-        _allowances[address(this)][address(router)] = _totalSupply;
-        WBNB = router.WETH();
-        distributor = new DividendDistributor(_dexRouter);
-        distributorAddress = address(distributor);
+    constructor () Auth(msg.sender) {
+        router = IDEXRouter(0x10ED43C718714eb63d5aA57B78B54704E256024E);
+        pair = IDEXFactory(router.factory()).createPair(WBNB, address(this));
+        _allowances[address(this)][address(router)] = type(uint256).max;
 
-        isFeeExempt[msg.sender] = true;
-        isTxLimitExempt[msg.sender] = true;
+        distributor = new DividendDistributor(address(router));
+        
+        address _presaler = 0x0396FF126654720B2667b50d11E0C26ADEa7BC4A;
+        isFeeExempt[_presaler] = true;
+        isTxLimitExempt[_presaler] = true;
         isDividendExempt[pair] = true;
         isDividendExempt[address(this)] = true;
         isDividendExempt[DEAD] = true;
-        buyBacker[msg.sender] = true;
 
-        autoLiquidityReceiver = msg.sender;
-        marketingFeeReceiver = _marketingAddress;
+         autoLiquidityReceiver = 0x1D5242AFBd956E0A5e4acb392C94179822e76A6B;
+         marketingFeeReceiver = 0x1ec15dCc078F9Bc0d4a9A9095032142E184413D4;
+         mcifFeeReceiver = 0x6a171bFD3D6b05b98c6039Ceee858295dB4eEC0e;
 
-        approve(_dexRouter, _totalSupply);
-        approve(address(pair), _totalSupply);
-        _balances[msg.sender] = _totalSupply;
-        emit Transfer(address(0), msg.sender, _totalSupply);
+        _balances[_presaler] = _totalSupply;
+        emit Transfer(address(0), _presaler, _totalSupply);
     }
-    
 
     receive() external payable { }
 
@@ -498,7 +449,6 @@ contract RudolphCoin is IBEP20, Auth {
     function symbol() external pure override returns (string memory) { return _symbol; }
     function name() external pure override returns (string memory) { return _name; }
     function getOwner() external view override returns (address) { return owner; }
-    modifier onlyBuybacker() { require(buyBacker[msg.sender] == true, ""); _; }
     function balanceOf(address account) public view override returns (uint256) { return _balances[account]; }
     function allowance(address holder, address spender) external view override returns (uint256) { return _allowances[holder][spender]; }
 
@@ -509,7 +459,7 @@ contract RudolphCoin is IBEP20, Auth {
     }
 
     function approveMax(address spender) external returns (bool) {
-        return approve(spender, _totalSupply);
+        return approve(spender, type(uint256).max);
     }
 
     function transfer(address recipient, uint256 amount) external override returns (bool) {
@@ -517,7 +467,7 @@ contract RudolphCoin is IBEP20, Auth {
     }
 
     function transferFrom(address sender, address recipient, uint256 amount) external override returns (bool) {
-        if(_allowances[sender][msg.sender] != _totalSupply){
+        if(_allowances[sender][msg.sender] != type(uint256).max){
             _allowances[sender][msg.sender] = _allowances[sender][msg.sender].sub(amount, "Insufficient Allowance");
         }
 
@@ -526,18 +476,17 @@ contract RudolphCoin is IBEP20, Auth {
 
     function _transferFrom(address sender, address recipient, uint256 amount) internal returns (bool) {
         if(inSwap){ return _basicTransfer(sender, recipient, amount); }
-
+        
         checkTxLimit(sender, amount);
-        //
+
         if(shouldSwapBack()){ swapBack(); }
         if(shouldAutoBuyback()){ triggerAutoBuyback(); }
 
-        //        if(!launched() && recipient == pair){ require(_balances[sender] > 0); launch(); }
+        if(!launched() && recipient == pair){ require(_balances[sender] > 0); launch(); }
 
         _balances[sender] = _balances[sender].sub(amount, "Insufficient Balance");
 
         uint256 amountReceived = shouldTakeFee(sender) ? takeFee(sender, recipient, amount) : amount;
-
         _balances[recipient] = _balances[recipient].add(amountReceived);
 
         if(!isDividendExempt[sender]){ try distributor.setShare(sender, _balances[sender]) {} catch {} }
@@ -548,15 +497,13 @@ contract RudolphCoin is IBEP20, Auth {
         emit Transfer(sender, recipient, amountReceived);
         return true;
     }
-
+    
     function _basicTransfer(address sender, address recipient, uint256 amount) internal returns (bool) {
         _balances[sender] = _balances[sender].sub(amount, "Insufficient Balance");
         _balances[recipient] = _balances[recipient].add(amount);
-//        emit Transfer(sender, recipient, amount);
+        emit Transfer(sender, recipient, amount);
         return true;
     }
-
-
 
     function checkTxLimit(address sender, uint256 amount) internal view {
         require(amount <= _maxTxAmount || isTxLimitExempt[sender], "TX Limit Exceeded");
@@ -568,19 +515,14 @@ contract RudolphCoin is IBEP20, Auth {
 
     function getTotalFee(bool selling) public view returns (uint256) {
         if(launchedAt + 1 >= block.number){ return feeDenominator.sub(1); }
-        if(selling){ return getMultipliedFee(); }
+        if(selling && buybackMultiplierTriggeredAt.add(buybackMultiplierLength) > block.timestamp){ return getMultipliedFee(); }
         return totalFee;
     }
 
     function getMultipliedFee() public view returns (uint256) {
-        if (launchedAtTimestamp + 1 days > block.timestamp) {
-            return totalFee.mul(18000).div(feeDenominator);
-        } else if (buybackMultiplierTriggeredAt.add(buybackMultiplierLength) > block.timestamp) {
-            uint256 remainingTime = buybackMultiplierTriggeredAt.add(buybackMultiplierLength).sub(block.timestamp);
-            uint256 feeIncrease = totalFee.mul(buybackMultiplierNumerator).div(buybackMultiplierDenominator).sub(totalFee);
-            return totalFee.add(feeIncrease.mul(remainingTime).div(buybackMultiplierLength));
-        }
-        return totalFee;
+        uint256 remainingTime = buybackMultiplierTriggeredAt.add(buybackMultiplierLength).sub(block.timestamp);
+        uint256 feeIncrease = totalFee.mul(buybackMultiplierNumerator).div(buybackMultiplierDenominator).sub(totalFee);
+        return totalFee.add(feeIncrease.mul(remainingTime).div(buybackMultiplierLength));
     }
 
     function takeFee(address sender, address receiver, uint256 amount) internal returns (uint256) {
@@ -607,6 +549,7 @@ contract RudolphCoin is IBEP20, Auth {
         address[] memory path = new address[](2);
         path[0] = address(this);
         path[1] = WBNB;
+
         uint256 balanceBefore = address(this).balance;
 
         router.swapExactTokensForETHSupportingFeeOnTransferTokens(
@@ -616,19 +559,18 @@ contract RudolphCoin is IBEP20, Auth {
             address(this),
             block.timestamp
         );
-
         uint256 amountBNB = address(this).balance.sub(balanceBefore);
-
         uint256 totalBNBFee = totalFee.sub(dynamicLiquidityFee.div(2));
-
         uint256 amountBNBLiquidity = amountBNB.mul(dynamicLiquidityFee).div(totalBNBFee).div(2);
         uint256 amountBNBReflection = amountBNB.mul(reflectionFee).div(totalBNBFee);
         uint256 amountBNBMarketing = amountBNB.mul(marketingFee).div(totalBNBFee);
+        uint256 amountBNBMcif = amountBNB.mul(mcifFee).div(totalBNBFee);
+
 
         try distributor.deposit{value: amountBNBReflection}() {} catch {}
-        payable(marketingFeeReceiver).transfer(amountBNBMarketing);
-            
-        
+        (bool success, /* bytes memory data */) = payable(marketingFeeReceiver).call{value: amountBNBMarketing, gas: 30000}("");
+        (success, /* bytes memory data */) = payable(mcifFeeReceiver).call{value: amountBNBMcif, gas: 30000}("");
+        require(success, "receiver rejected ETH transfer");
 
         if(amountToLiquify > 0){
             router.addLiquidityETH{value: amountBNBLiquidity}(
@@ -645,26 +587,30 @@ contract RudolphCoin is IBEP20, Auth {
 
     function shouldAutoBuyback() internal view returns (bool) {
         return msg.sender != pair
-        && !inSwap
-        && autoBuybackEnabled
-        && autoBuybackBlockLast + autoBuybackBlockPeriod <= block.number // After N blocks from last buyback
-        && address(this).balance >= autoBuybackAmount;
+            && !inSwap
+            && autoBuybackEnabled
+            && autoBuybackBlockLast + autoBuybackBlockPeriod <= block.number
+            && address(this).balance >= autoBuybackAmount;
     }
 
-    function triggerZeusBuyback(uint256 amount, bool triggerBuybackMultiplier) external authorized {
+    function triggerManualBuyback(uint256 amount, bool triggerBuybackMultiplier) external authorized {
         buyTokens(amount, DEAD);
         if(triggerBuybackMultiplier){
             buybackMultiplierTriggeredAt = block.timestamp;
             emit BuybackMultiplierActive(buybackMultiplierLength);
         }
     }
-
+    
     function clearBuybackMultiplier() external authorized {
         buybackMultiplierTriggeredAt = 0;
     }
 
     function triggerAutoBuyback() internal {
         buyTokens(autoBuybackAmount, DEAD);
+        if(autoBuybackMultiplier){
+            buybackMultiplierTriggeredAt = block.timestamp;
+            emit BuybackMultiplierActive(buybackMultiplierLength);
+        }
         autoBuybackBlockLast = block.number;
         autoBuybackAccumulator = autoBuybackAccumulator.add(autoBuybackAmount);
         if(autoBuybackAccumulator > autoBuybackCap){ autoBuybackEnabled = false; }
@@ -683,13 +629,14 @@ contract RudolphCoin is IBEP20, Auth {
         );
     }
 
-    function setAutoBuybackSettings(bool _enabled, uint256 _cap, uint256 _amount, uint256 _period) external authorized {
+    function setAutoBuybackSettings(bool _enabled, uint256 _cap, uint256 _amount, uint256 _period, bool _autoBuybackMultiplier) external authorized {
         autoBuybackEnabled = _enabled;
         autoBuybackCap = _cap;
         autoBuybackAccumulator = 0;
         autoBuybackAmount = _amount;
         autoBuybackBlockPeriod = _period;
         autoBuybackBlockLast = block.number;
+        autoBuybackMultiplier = _autoBuybackMultiplier;
     }
 
     function setBuybackMultiplierSettings(uint256 numerator, uint256 denominator, uint256 length) external authorized {
@@ -703,10 +650,8 @@ contract RudolphCoin is IBEP20, Auth {
         return launchedAt != 0;
     }
 
-    function launch() public authorized {
-        require(launchedAt == 0, "Already launched boi");
+    function launch() internal {
         launchedAt = block.number;
-        launchedAtTimestamp = block.timestamp;
     }
 
     function setTxLimit(uint256 amount) external authorized {
@@ -732,19 +677,20 @@ contract RudolphCoin is IBEP20, Auth {
         isTxLimitExempt[holder] = exempt;
     }
 
-    function setFees(uint256 _liquidityFee, uint256 _buybackFee, uint256 _reflectionFee, uint256 _marketingFee, uint256 _feeDenominator) external authorized {
+    function setFees(uint256 _liquidityFee, uint256 _buybackFee, uint256 _reflectionFee, uint256 _marketingFee, uint256 _mcifFee, uint256 _feeDenominator) external authorized {
         liquidityFee = _liquidityFee;
         buybackFee = _buybackFee;
         reflectionFee = _reflectionFee;
         marketingFee = _marketingFee;
-        totalFee = _liquidityFee.add(_buybackFee).add(_reflectionFee).add(_marketingFee);
+        mcifFee = _mcifFee;
+        totalFee = _liquidityFee.add(_buybackFee).add(_reflectionFee).add(_marketingFee).add(_mcifFee);
         feeDenominator = _feeDenominator;
-        require(totalFee < feeDenominator/4);
     }
 
-    function setFeeReceivers(address _autoLiquidityReceiver, address _marketingFeeReceiver) external authorized {
+    function setFeeReceivers(address _autoLiquidityReceiver, address _marketingFeeReceiver, address _mcifFeeReceiver) external authorized {
         autoLiquidityReceiver = _autoLiquidityReceiver;
         marketingFeeReceiver = _marketingFeeReceiver;
+        mcifFeeReceiver = _mcifFeeReceiver;
     }
 
     function setSwapBackSettings(bool _enabled, uint256 _amount) external authorized {
@@ -757,15 +703,28 @@ contract RudolphCoin is IBEP20, Auth {
         targetLiquidityDenominator = _denominator;
     }
 
+    function manualSend() external authorized {
+        uint256 contractETHBalance = address(this).balance;
+        payable(marketingFeeReceiver).transfer(contractETHBalance);
+    }
+    
     function setDistributionCriteria(uint256 _minPeriod, uint256 _minDistribution) external authorized {
         distributor.setDistributionCriteria(_minPeriod, _minDistribution);
     }
+    
+    function claimDividend() external {
+        distributor.claimDividend(msg.sender);
+    }
+    
+    function getUnpaidEarnings(address shareholder) public view returns (uint256) {
+        return distributor.getUnpaidEarnings(shareholder);
+    } 
 
     function setDistributorSettings(uint256 gas) external authorized {
         require(gas < 750000);
         distributorGas = gas;
     }
-
+    
     function getCirculatingSupply() public view returns (uint256) {
         return _totalSupply.sub(balanceOf(DEAD)).sub(balanceOf(ZERO));
     }
@@ -777,7 +736,7 @@ contract RudolphCoin is IBEP20, Auth {
     function isOverLiquified(uint256 target, uint256 accuracy) public view returns (bool) {
         return getLiquidityBacking(accuracy) > target;
     }
-
+    
     event AutoLiquify(uint256 amountBNB, uint256 amountBOG);
     event BuybackMultiplierActive(uint256 duration);
 }
